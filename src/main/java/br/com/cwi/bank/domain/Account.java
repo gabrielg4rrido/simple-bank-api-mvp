@@ -23,10 +23,10 @@ public class Account {
 
   protected Account() { }
 
-  public Account(String name, BigDecimal balance) {
+  public Account(String name, BigDecimal balance, Instant createdAt) {
     this.name = name;
     this.balance = balance;
-    this.createdAt = Instant.now();
+    this.createdAt = createdAt;
   }
 
   public Long getId() { return id; }
