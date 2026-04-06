@@ -22,15 +22,14 @@ public class Transfer {
   private BigDecimal amount;
 
   @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  private Instant createdAt = Instant.now();
 
   protected Transfer() {}
 
-  public Transfer(Long fromAccountId, Long toAccountId, BigDecimal amount, Instant createdAt) {
+  public Transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
     this.fromAccountId = fromAccountId;
     this.toAccountId = toAccountId;
     this.amount = amount;
-    this.createdAt = createdAt;
   }
 
   public Long getId() { return id; }

@@ -19,14 +19,13 @@ public class Account {
   private BigDecimal balance;
 
   @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  private Instant createdAt = Instant.now();
 
   protected Account() { }
 
-  public Account(String name, BigDecimal balance, Instant createdAt) {
+  public Account(String name, BigDecimal balance) {
     this.name = name;
     this.balance = balance;
-    this.createdAt = createdAt;
   }
 
   public Long getId() { return id; }

@@ -26,16 +26,15 @@ public class AccountMovement {
   private BigDecimal amount;
 
   @Column(name="created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  private Instant createdAt = Instant.now();
 
   protected AccountMovement() {}
 
-  public AccountMovement(Long accountId, Long transferId, MovementType movementType, BigDecimal amount, Instant createdAt) {
+  public AccountMovement(Long accountId, Long transferId, MovementType movementType, BigDecimal amount) {
     this.accountId = accountId;
     this.transferId = transferId;
     this.movementType = movementType;
     this.amount = amount;
-    this.createdAt = createdAt;
   }
 
   public Long getId() { return id; }
