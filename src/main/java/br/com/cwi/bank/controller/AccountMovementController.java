@@ -5,6 +5,7 @@ import br.com.cwi.bank.dto.AccountMovementResponse;
 import br.com.cwi.bank.exception.AccountNotFoundException;
 import br.com.cwi.bank.repository.AccountMovementRepository;
 import br.com.cwi.bank.repository.AccountRepository;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,6 +27,7 @@ public class AccountMovementController {
   @GetMapping
   public Page<AccountMovementResponse> list(
     @PathVariable Long accountId,
+    @ParameterObject
     @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
   ) {
     if (!accountRepository.existsById(accountId)) {
