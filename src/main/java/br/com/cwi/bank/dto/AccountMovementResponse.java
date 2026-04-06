@@ -1,4 +1,4 @@
-api depackage br.com.cwi.bank.dto;
+package br.com.cwi.bank.dto;
 
 import br.com.cwi.bank.domain.MovementType;
 
