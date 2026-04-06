@@ -2,6 +2,7 @@ package br.com.cwi.bank.service;
 
 import br.com.cwi.bank.domain.*;
 import br.com.cwi.bank.event.TransferCompletedEvent;
+import br.com.cwi.bank.exception.AccountNotFoundException;
 import br.com.cwi.bank.exception.InsufficientFundsException;
 import br.com.cwi.bank.repository.AccountRepository;
 import br.com.cwi.bank.repository.AccountMovementRepository;
@@ -44,7 +45,7 @@ public class TransferService {
 
     List<Account> lockedAccounts = accountRepository.findAllByIdInForUpdate(idsToLock);
     if (lockedAccounts.size() != 2) {
-      throw new IllegalArgumentException("Conta não encontrada.");
+      throw new AccountNotFoundException("Conta não encontrada.");
     }
 
     Account from = lockedAccounts.stream()
