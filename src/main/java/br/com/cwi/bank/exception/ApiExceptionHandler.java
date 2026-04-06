@@ -16,6 +16,12 @@ public class ApiExceptionHandler {
     return new ErrorResponse(ex.getMessage(), 409, Instant.now());
   }
 
+  @ExceptionHandler(AccountNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public ErrorResponse handleAccountNotFound(AccountNotFoundException ex) {
+    return new ErrorResponse(ex.getMessage(), 404, Instant.now());
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ErrorResponse handleBadRequest(IllegalArgumentException ex) {
