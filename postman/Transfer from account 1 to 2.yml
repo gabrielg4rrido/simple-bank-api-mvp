@@ -1,0 +1,23 @@
+info:
+  name: Transfer from account 1 to 2
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{apiURL}}/transfers"
+  body:
+    type: json
+    data: |-
+      {
+        "fromAccountId": 1,
+        "toAccountId": 2,
+        "amount": 300.00
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
