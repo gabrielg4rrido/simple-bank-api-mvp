@@ -1,89 +1,90 @@
 # Simple Bank API (MVP)
 
-API REST simplificada para um banco digital (teste técnico), construída com **Spring Boot**, **JPA**, **Flyway** e H2.
+API REST simplificada para um banco digital (teste técnico), construída com **Spring Boot**, **JPA** e **Flyway**.  
+Por padrão, roda localmente com **H2** e também suporta execução com **PostgreSQL** via **Docker Compose**.
+
+---
 
 ## Requisitos
 
-- **Java 21**
-- **Maven**
+- Java 21
+- Maven
+- (Opcional) Docker + Docker Compose para rodar com PostgreSQL
 
-## Como rodar
+---
 
-```bash
-./mvnw spring-boot:run
-```
+## Como rodar (local com H2)
 
-A aplicação sobe, executa as migrations do Flyway e popula o banco com contas iniciais.
+1. Suba a aplicação:
 
-## Swagger (OpenAPI)
+   mvn spring-boot:run
 
-- Swagger UI: `http://localhost:8080/swagger-ui.html`  
-  (se não abrir, tente `http://localhost:8080/swagger-ui/index.html`)
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+2. Acesse:
+    - Aplicação: http://localhost:8080
+    - Swagger UI: http://localhost:8080/swagger-ui/index.html  
+      (alternativa: http://localhost:8080/swagger-ui.html)
+    - OpenAPI JSON: http://localhost:8080/v3/api-docs
+    - H2 Console: http://localhost:8080/h2-console
 
-## Banco de dados (H2)
+Observação: o Flyway executa as migrations automaticamente no startup.
 
-- H2 Console: `http://localhost:8080/h2-console`
+---
 
-> O projeto usa H2 via JDBC URL definida em `application.properties`.
+## Como rodar (Docker com PostgreSQL)
 
-## Endpoints
+1. Suba Postgres + aplicação:
+
+   docker compose up --build
+
+2. Acesse:
+    - Aplicação: http://localhost:8080
+    - Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+3. Parar os containers:
+
+   docker compose down
+
+4. Resetar o banco (apagando o volume persistente):
+
+   docker compose down -v
+
+Observação: ao subir novamente após reset, o Flyway aplicará todas as migrations desde o início.
+
+---
+
+## Endpoints principais
 
 ### Listar contas
+- GET /accounts
 
-`GET /accounts`
-
-Exemplo:
-
-```bash
-curl -s http://localhost:8080/accounts
-```
-
-### Criar transferência entre contas
-
-`POST /transfers`
-
-Body:
-
-```json
-{
-  "fromAccountId": 1,
-  "toAccountId": 2,
-  "amount": 10.00
-}
-```
-
-Exemplo:
-
-```bash
-curl -s -X POST http://localhost:8080/transfers \
-  -H "Content-Type: application/json" \
-  -d '{"fromAccountId":1,"toAccountId":2,"amount":10.00}'
-```
+### Criar transferência
+- POST /transfers  
+  Corpo (exemplo conceitual):
+    - fromAccountId
+    - toAccountId
+    - amount
 
 Respostas esperadas (resumo):
-- `201 Created`: transferência criada
-- `404 Not Found`: conta não encontrada
-- `409 Conflict`: saldo insuficiente
-- `400 Bad Request`: dados inválidos
+- 201: transferência criada
+- 404: conta não encontrada
+- 409: saldo insuficiente
+- 400: dados inválidos
 
-### Consultar movimentações de uma conta (paginado)
-
-`GET /accounts/{accountId}/movements`
+### Consultar movimentações (paginado)
+- GET /accounts/{accountId}/movements
 
 Query params:
-- `page` (default: 0)
-- `size` (default: 20)
-- `sort` (ex.: `createdAt,desc`)
+- page (default: 0)
+- size (default: 20)
+- sort (exemplo: createdAt,desc)
 
-Exemplo:
-
-```bash
-curl -s "http://localhost:8080/accounts/1/movements?page=0&size=20&sort=createdAt,desc"
-```
+---
 
 ## Rodando testes
 
-```bash
 ./mvnw test
-```
+
+## Postman Collection
+Há uma coleção Postman com envariáveis pré-configuradas para facilitar os testes. 
+Importar o arquivo `postman_collection.json` no Postman e ajustar a variável `baseUrl` conforme necessário (ex: http://localhost:8080).
+

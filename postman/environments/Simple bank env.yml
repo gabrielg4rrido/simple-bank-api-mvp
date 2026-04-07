@@ -1,0 +1,5 @@
+name: Simple bank env
+variables:
+  - name: apiURL
+    value: |
+      http://localhost:8080
