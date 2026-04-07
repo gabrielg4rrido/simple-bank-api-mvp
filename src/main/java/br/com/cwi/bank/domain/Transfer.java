@@ -24,12 +24,20 @@ public class Transfer {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
 
+  @Column(name = "idempotency_key", length = 100, unique = true)
+  private String idempotencyKey;
+
   protected Transfer() {}
 
-  public Transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+  public Transfer(Long fromAccountId, Long toAccountId, BigDecimal amount, String idempotencyKey) {
     this.fromAccountId = fromAccountId;
     this.toAccountId = toAccountId;
     this.amount = amount;
+    this.idempotencyKey = idempotencyKey;
+  }
+
+  public Transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+    this(fromAccountId, toAccountId, amount, null);
   }
 
   public Long getId() { return id; }
@@ -37,4 +45,5 @@ public class Transfer {
   public Long getToAccountId() { return toAccountId; }
   public BigDecimal getAmount() { return amount; }
   public Instant getCreatedAt() { return createdAt; }
+  public String getIdempotencyKey() { return idempotencyKey; }
 }
