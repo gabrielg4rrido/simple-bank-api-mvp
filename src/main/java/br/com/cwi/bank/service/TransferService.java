@@ -2,12 +2,16 @@ package br.com.cwi.bank.service;
 
 import br.com.cwi.bank.domain.*;
 import br.com.cwi.bank.event.TransferCompletedEvent;
+import br.com.cwi.bank.exception.AccountBusyException;
 import br.com.cwi.bank.exception.AccountNotFoundException;
 import br.com.cwi.bank.exception.InsufficientFundsException;
 import br.com.cwi.bank.repository.AccountRepository;
 import br.com.cwi.bank.repository.AccountMovementRepository;
 import br.com.cwi.bank.repository.TransferRepository;
+import jakarta.persistence.LockTimeoutException;
+import jakarta.persistence.PessimisticLockException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +57,14 @@ public class TransferService {
 
     List<Long> idsToLock = Stream.of(fromAccountId, toAccountId).sorted().toList();
 
-    List<Account> lockedAccounts = accountRepository.findAllByIdInForUpdate(idsToLock);
+    List<Account> lockedAccounts;
+    try {
+      lockedAccounts = accountRepository.findAllByIdInForUpdate(idsToLock);
+    }
+    catch (CannotAcquireLockException | LockTimeoutException | PessimisticLockException e) {
+      throw new AccountBusyException("A conta está em uso no momento. Tente novamente.", e );
+    }
+
     if (lockedAccounts.size() != 2) {
       throw new AccountNotFoundException("Conta não encontrada.");
     }

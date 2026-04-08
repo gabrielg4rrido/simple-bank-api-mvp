@@ -22,6 +22,12 @@ public class ApiExceptionHandler {
     return new ErrorResponse(ex.getMessage(), 404, Instant.now());
   }
 
+  @ExceptionHandler(AccountBusyException.class)
+  @ResponseStatus(HttpStatus.LOCKED)
+  public ErrorResponse handle(AccountBusyException ex) {
+    return new ErrorResponse(ex.getMessage(), 423, Instant.now());
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ErrorResponse handleBadRequest(IllegalArgumentException ex) {
