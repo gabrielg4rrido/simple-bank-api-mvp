@@ -19,11 +19,15 @@ public class TransferController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public TransferResponse create(@RequestBody @Valid TransferRequest request) {
+  public TransferResponse create(
+    @RequestHeader("Idempotency-Key") String idempotencyKey,
+    @RequestBody @Valid TransferRequest request
+  ) {
     Long transferId = transferService.transfer(
       request.fromAccountId(),
       request.toAccountId(),
-      request.amount()
+      request.amount(),
+      idempotencyKey
     );
     return new TransferResponse(transferId);
   }

@@ -26,7 +26,8 @@ Por padrão, roda localmente com **H2** e também suporta execução com **Postg
     - OpenAPI JSON: http://localhost:8080/v3/api-docs
     - H2 Console: http://localhost:8080/h2-console
 
-Observação: o Flyway executa as migrations automaticamente no startup.
+
+    Observação: o Flyway executa as migrations automaticamente no startup.
 
 ---
 
@@ -48,7 +49,8 @@ Observação: o Flyway executa as migrations automaticamente no startup.
 
    docker compose down -v
 
-Observação: ao subir novamente após reset, o Flyway aplicará todas as migrations desde o início.
+
+    Observação: ao subir novamente após reset, o Flyway aplicará todas as migrations desde o início.
 
 ---
 
@@ -82,9 +84,15 @@ Query params:
 
 ## Rodando testes
 
-./mvnw test
+    ./mvnw test
+
+- Rodando teste simulando concorrência com Testcontainers e PostgreSQL (necessita Docker:
+
+
+    mvn -Dtest=TransferServicePostgresConcurrencyIT test
 
 ## Postman Collection
 Há uma coleção Postman com envariáveis pré-configuradas para facilitar os testes. 
 Importar o arquivo `postman_collection.json` no Postman e ajustar a variável `baseUrl` conforme necessário (ex: http://localhost:8080).
 
+---

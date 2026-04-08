@@ -2,12 +2,17 @@ package br.com.cwi.bank.service;
 
 import br.com.cwi.bank.domain.*;
 import br.com.cwi.bank.event.TransferCompletedEvent;
+import br.com.cwi.bank.exception.AccountBusyException;
 import br.com.cwi.bank.exception.AccountNotFoundException;
 import br.com.cwi.bank.exception.InsufficientFundsException;
 import br.com.cwi.bank.repository.AccountRepository;
 import br.com.cwi.bank.repository.AccountMovementRepository;
 import br.com.cwi.bank.repository.TransferRepository;
+import jakarta.persistence.LockTimeoutException;
+import jakarta.persistence.PessimisticLockException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,14 +41,30 @@ public class TransferService {
   }
 
   @Transactional
-  public Long transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+  public Long transfer(Long fromAccountId, Long toAccountId, BigDecimal amount, String idempotencyKey) {
     if (fromAccountId.equals(toAccountId)) {
       throw new IllegalArgumentException("A conta destino deve ser diferente da conta de envio.");
     }
 
+    if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+      var existing = transferRepository.findByIdempotencyKey(idempotencyKey);
+      if (existing.isPresent()) {
+        return existing.get().getId();
+      }
+    } else {
+      idempotencyKey = null;
+    }
+
     List<Long> idsToLock = Stream.of(fromAccountId, toAccountId).sorted().toList();
 
-    List<Account> lockedAccounts = accountRepository.findAllByIdInForUpdate(idsToLock);
+    List<Account> lockedAccounts;
+    try {
+      lockedAccounts = accountRepository.findAllByIdInForUpdate(idsToLock);
+    }
+    catch (CannotAcquireLockException | LockTimeoutException | PessimisticLockException e) {
+      throw new AccountBusyException("A conta está em uso no momento. Tente novamente.", e );
+    }
+
     if (lockedAccounts.size() != 2) {
       throw new AccountNotFoundException("Conta não encontrada.");
     }
@@ -65,7 +86,17 @@ public class TransferService {
     from.debit(amount);
     to.credit(amount);
 
-    Transfer transfer = transferRepository.save(new Transfer(fromAccountId, toAccountId, amount));
+    Transfer transfer;
+    try {
+      transfer = transferRepository.save(new Transfer(fromAccountId, toAccountId, amount, idempotencyKey));
+    } catch (DataIntegrityViolationException e) {
+      if (idempotencyKey != null) {
+        return transferRepository.findByIdempotencyKey(idempotencyKey)
+          .map(Transfer::getId)
+          .orElseThrow(() -> e);
+      }
+      throw e;
+    }
 
     movementRepository.save(new AccountMovement(fromAccountId, transfer.getId(), MovementType.DEBIT, amount));
     movementRepository.save(new AccountMovement(toAccountId, transfer.getId(), MovementType.CREDIT, amount));
@@ -75,5 +106,10 @@ public class TransferService {
     ));
 
     return transfer.getId();
+  }
+
+  @Transactional
+  public Long transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+    return transfer(fromAccountId, toAccountId, amount, null);
   }
 }
