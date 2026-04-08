@@ -10,10 +10,12 @@ import br.com.cwi.bank.repository.TransferRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -116,5 +118,66 @@ class TransferServiceTest {
     } catch (Exception e) {
       throw new RuntimeException("Failed to set id via reflection for " + entity.getClass().getSimpleName(), e);
     }
+  }
+
+  @Test
+  void shouldReturnExistingTransferIdWhenIdempotencyKeyAlreadyUsed() {
+    Long fromId = 1L;
+    Long toId = 2L;
+    BigDecimal amount = new BigDecimal("10.00");
+    String key = "idem-123";
+
+    Transfer existing = new Transfer(fromId, toId, amount, key);
+    setId(existing, 777L);
+
+    when(transferRepository.findByIdempotencyKey(key))
+      .thenReturn(Optional.of(existing));
+
+    Long transferId = transferService.transfer(fromId, toId, amount, key);
+
+    assertEquals(777L, transferId);
+
+    verifyNoInteractions(accountRepository);
+    verify(transferRepository, never()).save(any());
+    verifyNoInteractions(movementRepository);
+    verifyNoInteractions(eventPublisher);
+  }
+
+  @Test
+  void shouldReturnExistingTransferIdWhenSaveFailsDueToUniqueIdempotencyKey() {
+    Long fromId = 1L;
+    Long toId = 2L;
+    BigDecimal amount = new BigDecimal("10.00");
+    String key = "idem-race";
+
+    Account from = new Account("From", new BigDecimal("100.00"));
+    Account to = new Account("To", new BigDecimal("0.00"));
+    setId(from, fromId);
+    setId(to, toId);
+
+    when(transferRepository.findByIdempotencyKey(key))
+      .thenReturn(Optional.empty());
+
+    when(accountRepository.findAllByIdInForUpdate(List.of(1L, 2L)))
+      .thenReturn(List.of(from, to));
+
+    // simulando violação do UNIQUE no save (outra request salvou antes)
+    when(transferRepository.save(any(Transfer.class)))
+      .thenThrow(new DataIntegrityViolationException("Unique constraint"));
+
+    // depois da falha, o service busca por key e encontra o registro
+    Transfer existing = new Transfer(fromId, toId, amount, key);
+    setId(existing, 888L);
+
+    // segunda consulta retorna existente
+    when(transferRepository.findByIdempotencyKey(key))
+      .thenReturn(Optional.empty(), Optional.of(existing)); // <- sequência: antes empty, depois existing
+
+    Long transferId = transferService.transfer(fromId, toId, amount, key);
+
+    assertEquals(888L, transferId);
+
+    verify(movementRepository, never()).save(any());
+    verify(eventPublisher, never()).publishEvent(any());
   }
 }
