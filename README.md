@@ -84,7 +84,7 @@ Query params:
 
 ## Rodando testes
 
-    ./mvnw test
+    mvn test
 
 - Rodando teste simulando concorrência com Testcontainers e PostgreSQL (necessita Docker:
 
